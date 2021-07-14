@@ -121,7 +121,7 @@ KERNEL_FQ void gpu_memset (GLOBAL_AS uint4 *buf, const u32 value, const u64 gid_
   r.s1 = value;
   r.s2 = value;
   r.s3 = value;
-  #elif defined IS_CUDA
+  #elif defined IS_CUDA || defined IS_HIP
   r.x = value;
   r.y = value;
   r.z = value;

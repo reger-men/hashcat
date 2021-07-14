@@ -954,10 +954,10 @@ int hc_hiprtcCompileProgram (hashcat_ctx_t *hashcat_ctx, hiprtcProgram prog, int
   backend_ctx_t *backend_ctx = hashcat_ctx->backend_ctx;
 
   HIPRTC_PTR *hiprtc = (HIPRTC_PTR *) backend_ctx->hiprtc;
-#if 0  
+#if 0
   for(int i =0; i< numOptions; i++)
     printf("Option_%d = %s\n", i, options[i]);
-#endif  
+#endif
   const hiprtcResult HIPRTC_err = hiprtc->hiprtcCompileProgram (prog, numOptions, options);
 
   if (HIPRTC_err != HIPRTC_SUCCESS)
@@ -1283,7 +1283,7 @@ int hip_init (hashcat_ctx_t *hashcat_ctx)
 
   if (hip->lib == NULL) return -1;
 
-  // finding the right symbol is a PITA, 
+  // finding the right symbol is a PITA,
   #define HC_LOAD_FUNC_HIP(ptr,name,hipname,type,libname,noerr) \
     do { \
       ptr->name = (type) hc_dlsym ((ptr)->lib, #hipname); \
@@ -1364,7 +1364,7 @@ int hip_init (hashcat_ctx_t *hashcat_ctx)
   HC_LOAD_FUNC_HIP (hip, hipLinkDestroy,            hipLinkDestroy,             HIP_HIPLINKDESTROY,             HIP, 1);
   HC_LOAD_FUNC_HIP (hip, hipLinkComplete,           hipLinkComplete,            HIP_HIPLINKCOMPLETE,            HIP, 1);
   #endif
-  
+
   return 0;
 }
 
@@ -7335,8 +7335,8 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
       device_param->cuda_device = cuda_device;
 
-      device_param->is_cuda = true;
-
+      device_param->is_cuda   = true;
+      device_param->is_hip    = false;
       device_param->is_opencl = false;
 
       device_param->use_opencl12 = false;
@@ -7623,6 +7623,7 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
   int hip_devices_cnt    = 0;
   int hip_devices_active = 0;
+
   if (backend_ctx->hip)
   {
     // device count
@@ -7652,8 +7653,8 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
       device_param->hip_device = hip_device;
 
-      device_param->is_hip = true;
-
+      device_param->is_cuda   = false;
+      device_param->is_hip    = true;
       device_param->is_opencl = false;
 
       device_param->use_opencl12 = false;
@@ -7858,7 +7859,7 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
       if (hc_hipCtxCreate (hashcat_ctx, &hip_context, HIP_CTX_SCHED_BLOCKING_SYNC, device_param->hip_device) == -1) return -1;
 
-      if (hc_hipCtxSetCurrent (hashcat_ctx, hip_context) == -1) return -1;
+      if (hc_hipCtxPushCurrent (hashcat_ctx, hip_context) == -1) return -1;
 
       // bcrypt optimization?
       //const int rc_hipCtxSetCacheConfig = hc_hipCtxSetCacheConfig (hashcat_ctx, HIP_FUNC_CACHE_PREFER_SHARED);
@@ -7924,6 +7925,8 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
       device_param->device_available_mem = (u64) free;
 
+      if (hc_hipCtxPopCurrent (hashcat_ctx, &hip_context) == -1) return -1;
+
       if (hc_hipCtxDestroy (hashcat_ctx, hip_context) == -1) return -1;
     }
   }
@@ -7974,8 +7977,8 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
         //device_param->opencl_platform = opencl_platform;
 
-        device_param->is_cuda = false;
-
+        device_param->is_cuda   = false;
+        device_param->is_hip    = false;
         device_param->is_opencl = true;
 
         // store opencl platform i
@@ -8990,7 +8993,7 @@ void backend_ctx_devices_destroy (hashcat_ctx_t *hashcat_ctx)
   backend_ctx->cuda_devices_cnt       = 0;
   backend_ctx->cuda_devices_active    = 0;
   backend_ctx->hip_devices_cnt       = 0;
-  backend_ctx->hip_devices_active    = 0;  
+  backend_ctx->hip_devices_active    = 0;
   backend_ctx->opencl_devices_cnt     = 0;
   backend_ctx->opencl_devices_active  = 0;
 
@@ -9855,7 +9858,7 @@ static bool load_kernel (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_p
 
       hcfree (binary);
     }
-    
+
     /*
     * OCL
     */
@@ -10333,6 +10336,8 @@ int backend_session_begin (hashcat_ctx_t *hashcat_ctx)
     if (device_param->is_hip == true)
     {
       if (hc_hipCtxCreate (hashcat_ctx, &device_param->hip_context, HIP_CTX_SCHED_BLOCKING_SYNC, device_param->hip_device) == -1) return -1;
+
+      if (hc_hipCtxPushCurrent (hashcat_ctx, device_param->hip_context) == -1) return -1;
     }
 
     if (device_param->is_opencl == true)
@@ -10528,7 +10533,8 @@ int backend_session_begin (hashcat_ctx_t *hashcat_ctx)
     // we don't have sm_* on vendors not NV but it doesn't matter
 
     #if defined (DEBUG)
-    build_options_len += snprintf (build_options_buf + build_options_len, build_options_sz - build_options_len, "-O3 -march=native -minline-all-stringops -ftracer -funroll-loops -fprefetch-loop-arrays -ffast-math -fno-stack-protector -Wno-error -Wall -Wextra -Wshadow -Wno-unused-function -Wno-unused-parameter -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-write-strings -fno-gpu-rdc -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -Wno-invalid-constexpr -Wno-ignored-optimization-argument -Wno-unused-private-field -D LOCAL_MEM_TYPE=%d -D VENDOR_ID=%u -D amdgpu-target=gfx908 -D _XXX_CUDA_ARCH=%u -D HAS_ADD=%u -D HAS_ADDC=%u -D HAS_SUB=%u -D HAS_SUBC=%u -D HAS_VADD=%u -D HAS_VADDC=%u -D HAS_VADD_CO=%u -D HAS_VADDC_CO=%u -D HAS_VSUB=%u -D HAS_VSUBB=%u -D HAS_VSUB_CO=%u -D HAS_VSUBB_CO=%u -D HAS_VPERM=%u -D HAS_VADD3=%u -D HAS_VBFE=%u -D HAS_BFE=%u -D HAS_LOP3=%u -D HAS_MOV64=%u -D HAS_PRMT=%u -D VECT_SIZE=%d -D DEVICE_TYPE=%u -D DGST_R0=%u -D DGST_R1=%u -D DGST_R2=%u -D DGST_R3=%u -D DGST_ELEM=%u -D KERN_TYPE=%u -D ATTACK_EXEC=%u -D ATTACK_KERN=%u ", device_param->device_local_mem_type, device_param->opencl_platform_vendor_id, (device_param->sm_major * 100) + (device_param->sm_minor * 10), device_param->has_add, device_param->has_addc, device_param->has_sub, device_param->has_subc, device_param->has_vadd, device_param->has_vaddc, device_param->has_vadd_co, device_param->has_vaddc_co, device_param->has_vsub, device_param->has_vsubb, device_param->has_vsub_co, device_param->has_vsubb_co, device_param->has_vperm, device_param->has_vadd3, device_param->has_vbfe, device_param->has_bfe, device_param->has_lop3, device_param->has_mov64, device_param->has_prmt, device_param->vector_width, (u32) device_param->opencl_device_type, hashconfig->dgst_pos0, hashconfig->dgst_pos1, hashconfig->dgst_pos2, hashconfig->dgst_pos3, hashconfig->dgst_size / 4, kern_type, hashconfig->attack_exec, user_options_extra->attack_kern);
+    build_options_len += snprintf (build_options_buf + build_options_len, build_options_sz - build_options_len, "-O3 -march=native -minline-all-stringops -ftracer -funroll-loops -fprefetch-loop-arrays -ffast-math -fno-stack-protector -Wno-error -Wall -Wextra -Wshadow -Wno-unused-function -Wno-unused-parameter -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-write-strings -fno-gpu-rdc -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -Wno-invalid-constexpr -Wno-ignored-optimization-argument -Wno-unused-private-field -D LOCAL_MEM_TYPE=%d -D VENDOR_ID=%u -D _XXX_CUDA_ARCH=%u -D HAS_ADD=%u -D HAS_ADDC=%u -D HAS_SUB=%u -D HAS_SUBC=%u -D HAS_VADD=%u -D HAS_VADDC=%u -D HAS_VADD_CO=%u -D HAS_VADDC_CO=%u -D HAS_VSUB=%u -D HAS_VSUBB=%u -D HAS_VSUB_CO=%u -D HAS_VSUBB_CO=%u -D HAS_VPERM=%u -D HAS_VADD3=%u -D HAS_VBFE=%u -D HAS_BFE=%u -D HAS_LOP3=%u -D HAS_MOV64=%u -D HAS_PRMT=%u -D VECT_SIZE=%d -D DEVICE_TYPE=%u -D DGST_R0=%u -D DGST_R1=%u -D DGST_R2=%u -D DGST_R3=%u -D DGST_ELEM=%u -D KERN_TYPE=%u -D ATTACK_EXEC=%u -D ATTACK_KERN=%u ", device_param->device_local_mem_type, device_param->opencl_platform_vendor_id, (device_param->sm_major * 100) + (device_param->sm_minor * 10), device_param->has_add, device_param->has_addc, device_param->has_sub, device_param->has_subc, device_param->has_vadd, device_param->has_vaddc, device_param->has_vadd_co, device_param->has_vaddc_co, device_param->has_vsub, device_param->has_vsubb, device_param->has_vsub_co, device_param->has_vsubb_co, device_param->has_vperm, device_param->has_vadd3, device_param->has_vbfe, device_param->has_bfe, device_param->has_lop3, device_param->has_mov64, device_param->has_prmt, device_param->vector_width, (u32) device_param->opencl_device_type, hashconfig->dgst_pos0, hashconfig->dgst_pos1, hashconfig->dgst_pos2, hashconfig->dgst_pos3, hashconfig->dgst_size / 4, kern_type, hashconfig->attack_exec, user_options_extra->attack_kern);
+    //build_options_len += snprintf (build_options_buf + build_options_len, build_options_sz - build_options_len, "-O3 -march=native -minline-all-stringops -ftracer -funroll-loops -fprefetch-loop-arrays -ffast-math -fno-stack-protector -Wno-error -Wall -Wextra -Wshadow -Wno-unused-function -Wno-unused-parameter -Wno-unused-local-typedefs -Wno-unknown-pragmas -Wno-write-strings -fno-gpu-rdc -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -Wno-invalid-constexpr -Wno-ignored-optimization-argument -Wno-unused-private-field -D LOCAL_MEM_TYPE=%d -D VENDOR_ID=%u -D amdgpu-target=gfx908 -D _XXX_CUDA_ARCH=%u -D HAS_ADD=%u -D HAS_ADDC=%u -D HAS_SUB=%u -D HAS_SUBC=%u -D HAS_VADD=%u -D HAS_VADDC=%u -D HAS_VADD_CO=%u -D HAS_VADDC_CO=%u -D HAS_VSUB=%u -D HAS_VSUBB=%u -D HAS_VSUB_CO=%u -D HAS_VSUBB_CO=%u -D HAS_VPERM=%u -D HAS_VADD3=%u -D HAS_VBFE=%u -D HAS_BFE=%u -D HAS_LOP3=%u -D HAS_MOV64=%u -D HAS_PRMT=%u -D VECT_SIZE=%d -D DEVICE_TYPE=%u -D DGST_R0=%u -D DGST_R1=%u -D DGST_R2=%u -D DGST_R3=%u -D DGST_ELEM=%u -D KERN_TYPE=%u -D ATTACK_EXEC=%u -D ATTACK_KERN=%u ", device_param->device_local_mem_type, device_param->opencl_platform_vendor_id, (device_param->sm_major * 100) + (device_param->sm_minor * 10), device_param->has_add, device_param->has_addc, device_param->has_sub, device_param->has_subc, device_param->has_vadd, device_param->has_vaddc, device_param->has_vadd_co, device_param->has_vaddc_co, device_param->has_vsub, device_param->has_vsubb, device_param->has_vsub_co, device_param->has_vsubb_co, device_param->has_vperm, device_param->has_vadd3, device_param->has_vbfe, device_param->has_bfe, device_param->has_lop3, device_param->has_mov64, device_param->has_prmt, device_param->vector_width, (u32) device_param->opencl_device_type, hashconfig->dgst_pos0, hashconfig->dgst_pos1, hashconfig->dgst_pos2, hashconfig->dgst_pos3, hashconfig->dgst_size / 4, kern_type, hashconfig->attack_exec, user_options_extra->attack_kern);
     //build_options_len += snprintf (build_options_buf + build_options_len, build_options_sz - build_options_len, "-D LOCAL_MEM_TYPE=%d -D VENDOR_ID=%u -D CUDA_ARCH=%u -D HAS_ADD=%u -D HAS_ADDC=%u -D HAS_SUB=%u -D HAS_SUBC=%u -D HAS_VADD=%u -D HAS_VADDC=%u -D HAS_VADD_CO=%u -D HAS_VADDC_CO=%u -D HAS_VSUB=%u -D HAS_VSUBB=%u -D HAS_VSUB_CO=%u -D HAS_VSUBB_CO=%u -D HAS_VPERM=%u -D HAS_VADD3=%u -D HAS_VBFE=%u -D HAS_BFE=%u -D HAS_LOP3=%u -D HAS_MOV64=%u -D HAS_PRMT=%u -D VECT_SIZE=%d -D DEVICE_TYPE=%u -D DGST_R0=%u -D DGST_R1=%u -D DGST_R2=%u -D DGST_R3=%u -D DGST_ELEM=%u -D KERN_TYPE=%u -D ATTACK_EXEC=%u -D ATTACK_KERN=%u ", device_param->device_local_mem_type, device_param->opencl_platform_vendor_id, (device_param->sm_major * 100) + (device_param->sm_minor * 10), device_param->has_add, device_param->has_addc, device_param->has_sub, device_param->has_subc, device_param->has_vadd, device_param->has_vaddc, device_param->has_vadd_co, device_param->has_vaddc_co, device_param->has_vsub, device_param->has_vsubb, device_param->has_vsub_co, device_param->has_vsubb_co, device_param->has_vperm, device_param->has_vadd3, device_param->has_vbfe, device_param->has_bfe, device_param->has_lop3, device_param->has_mov64, device_param->has_prmt, device_param->vector_width, (u32) device_param->opencl_device_type, hashconfig->dgst_pos0, hashconfig->dgst_pos1, hashconfig->dgst_pos2, hashconfig->dgst_pos3, hashconfig->dgst_size / 4, kern_type, hashconfig->attack_exec, user_options_extra->attack_kern);
     #else
     //build_options_len += snprintf (build_options_buf + build_options_len, build_options_sz - build_options_len, "-D LOCAL_MEM_TYPE=%d -D VENDOR_ID=%u -D CUDA_ARCH=%u -D HAS_ADD=%u -D HAS_ADDC=%u -D HAS_SUB=%u -D HAS_SUBC=%u -D HAS_VADD=%u -D HAS_VADDC=%u -D HAS_VADD_CO=%u -D HAS_VADDC_CO=%u -D HAS_VSUB=%u -D HAS_VSUBB=%u -D HAS_VSUB_CO=%u -D HAS_VSUBB_CO=%u -D HAS_VPERM=%u -D HAS_VADD3=%u -D HAS_VBFE=%u -D HAS_BFE=%u -D HAS_LOP3=%u -D HAS_MOV64=%u -D HAS_PRMT=%u -D VECT_SIZE=%d -D DEVICE_TYPE=%u -D DGST_R0=%u -D DGST_R1=%u -D DGST_R2=%u -D DGST_R3=%u -D DGST_ELEM=%u -D KERN_TYPE=%u -D ATTACK_EXEC=%u -D ATTACK_KERN=%u -w ", device_param->device_local_mem_type, device_param->opencl_platform_vendor_id, (device_param->sm_major * 100) + (device_param->sm_minor * 10), device_param->has_add, device_param->has_addc, device_param->has_sub, device_param->has_subc, device_param->has_vadd, device_param->has_vaddc, device_param->has_vadd_co, device_param->has_vaddc_co, device_param->has_vsub, device_param->has_vsubb, device_param->has_vsub_co, device_param->has_vsubb_co, device_param->has_vperm, device_param->has_vadd3, device_param->has_vbfe, device_param->has_bfe, device_param->has_lop3, device_param->has_mov64, device_param->has_prmt, device_param->vector_width, (u32) device_param->opencl_device_type, hashconfig->dgst_pos0, hashconfig->dgst_pos1, hashconfig->dgst_pos2, hashconfig->dgst_pos3, hashconfig->dgst_size / 4, kern_type, hashconfig->attack_exec, user_options_extra->attack_kern);
@@ -10558,7 +10564,6 @@ int backend_session_begin (hashcat_ctx_t *hashcat_ctx)
     char *device_name_chksum        = (char *) hcmalloc (HCBUFSIZ_TINY);
     char *device_name_chksum_amp_mp = (char *) hcmalloc (HCBUFSIZ_TINY);
 
-    device_param->vector_width = 8;
     const size_t dnclen = snprintf (device_name_chksum, HCBUFSIZ_TINY, "%d-%d-%d-%d-%u-%s-%s-%s-%d-%u",
       backend_ctx->comptime,
       backend_ctx->cuda_driver_version,
@@ -13894,6 +13899,11 @@ int backend_session_begin (hashcat_ctx_t *hashcat_ctx)
     }
 
     hardware_power_all += device_param->hardware_power;
+
+    if (device_param->is_hip == true)
+    {
+      if (hc_hipCtxPopCurrent (hashcat_ctx, &device_param->hip_context) == -1) return -1;
+    }
 
     EVENT_DATA (EVENT_BACKEND_DEVICE_INIT_POST, &backend_devices_idx, sizeof (int));
   }

@@ -154,6 +154,13 @@ static int autotune (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
       if (CU_rc == -1) return -1;
     }
 
+    if (device_param->is_hip == true)
+    {
+      CU_rc = run_hip_kernel_atinit (hashcat_ctx, device_param, device_param->hip_d_pws_buf, kernel_power_max);
+
+      if (CU_rc == -1) return -1;
+    }
+
     if (device_param->is_opencl == true)
     {
       CL_rc = run_opencl_kernel_atinit (hashcat_ctx, device_param, device_param->opencl_d_pws_buf, kernel_power_max);
@@ -173,6 +180,13 @@ static int autotune (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
           if (device_param->is_cuda == true)
           {
             CU_rc = hc_cuMemcpyDtoD (hashcat_ctx, device_param->cuda_d_rules_c, device_param->cuda_d_rules, MIN (kernel_loops_max, KERNEL_RULES) * sizeof (kernel_rule_t));
+
+            if (CU_rc == -1) return -1;
+          }
+
+          if (device_param->is_hip == true)
+          {
+            CU_rc = hc_hipMemcpyDtoD (hashcat_ctx, device_param->hip_d_rules_c, device_param->hip_d_rules, MIN (kernel_loops_max, KERNEL_RULES) * sizeof (kernel_rule_t));
 
             if (CU_rc == -1) return -1;
           }
@@ -370,6 +384,27 @@ static int autotune (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
     if (CU_rc == -1) return -1;
   }
 
+  if (device_param->is_hip == true)
+  {
+    int CU_rc;
+
+    CU_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_pws_buf, 0, device_param->size_pws);
+
+    if (CU_rc == -1) return -1;
+
+    CU_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_plain_bufs, 0, device_param->size_plains);
+
+    if (CU_rc == -1) return -1;
+
+    CU_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_digests_shown, 0, device_param->size_shown);
+
+    if (CU_rc == -1) return -1;
+
+    CU_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_result, 0, device_param->size_results);
+
+    if (CU_rc == -1) return -1;
+  }
+
   if (device_param->is_opencl == true)
   {
     int CL_rc;
@@ -438,9 +473,12 @@ HC_API_CALL void *thread_autotune (void *p)
 
   if (device_param->is_cuda == true)
   {
-    const int rc_cuCtxSetCurrent = hc_cuCtxSetCurrent (hashcat_ctx, device_param->cuda_context);
+    if (hc_cuCtxSetCurrent (hashcat_ctx, device_param->cuda_context) == -1) return NULL;
+  }
 
-    if (rc_cuCtxSetCurrent == -1) return NULL;
+  if (device_param->is_hip == true)
+  {
+    if (hc_hipCtxPushCurrent (hashcat_ctx, device_param->hip_context) == -1) return NULL;
   }
 
   const int rc_autotune = autotune (hashcat_ctx, device_param);
@@ -448,6 +486,16 @@ HC_API_CALL void *thread_autotune (void *p)
   if (rc_autotune == -1)
   {
     // we should do something here, tell hashcat main that autotune failed to abort
+  }
+
+  if (device_param->is_cuda == true)
+  {
+    if (hc_cuCtxSetCurrent (hashcat_ctx, NULL) == -1) return NULL;
+  }
+
+  if (device_param->is_hip == true)
+  {
+    if (hc_hipCtxPopCurrent (hashcat_ctx, &device_param->hip_context) == -1) return NULL;
   }
 
   return NULL;

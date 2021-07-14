@@ -32,6 +32,13 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
     device_param->kernel_params[18] = &device_param->cuda_d_st_esalts_buf;
   }
 
+  if (device_param->is_hip == true)
+  {
+    device_param->kernel_params[15] = &device_param->hip_d_st_digests_buf;
+    device_param->kernel_params[17] = &device_param->hip_d_st_salts_buf;
+    device_param->kernel_params[18] = &device_param->hip_d_st_esalts_buf;
+  }
+
   if (device_param->is_opencl == true)
   {
     device_param->kernel_params[15] = &device_param->opencl_d_st_digests_buf;
@@ -91,6 +98,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
       if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
     }
 
+    if (device_param->is_hip == true)
+    {
+      if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
+    }
+
     if (device_param->is_opencl == true)
     {
       if (hc_clEnqueueWriteBuffer (hashcat_ctx, device_param->opencl_command_queue, device_param->opencl_d_pws_buf, CL_TRUE, 0, 1 * sizeof (pw_t), &pw, 0, NULL, NULL) == -1) return -1;
@@ -124,6 +136,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
         if (device_param->is_cuda == true)
         {
           if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
+        }
+
+        if (device_param->is_hip == true)
+        {
+          if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
         }
 
         if (device_param->is_opencl == true)
@@ -190,6 +207,13 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
           if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
         }
 
+        if (device_param->is_hip == true)
+        {
+          if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_combs_c, &comb, 1 * sizeof (pw_t)) == -1) return -1;
+
+          if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
+        }
+
         if (device_param->is_opencl == true)
         {
           if (hc_clEnqueueWriteBuffer (hashcat_ctx, device_param->opencl_command_queue, device_param->opencl_d_combs_c, CL_TRUE, 0, 1 * sizeof (pw_t), &comb, 0, NULL, NULL) == -1) return -1;
@@ -223,6 +247,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
           if (device_param->is_cuda == true)
           {
             if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
+          }
+
+          if (device_param->is_hip == true)
+          {
+            if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
           }
 
           if (device_param->is_opencl == true)
@@ -274,6 +303,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
           if (device_param->is_cuda == true)
           {
             if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_bfs_c, &bf, 1 * sizeof (bf_t)) == -1) return -1;
+          }
+
+          if (device_param->is_hip == true)
+          {
+            if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_bfs_c, &bf, 1 * sizeof (bf_t)) == -1) return -1;
           }
 
           if (device_param->is_opencl == true)
@@ -372,6 +406,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
             if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
           }
 
+          if (device_param->is_hip == true)
+          {
+            if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
+          }
+
           if (device_param->is_opencl == true)
           {
             if (hc_clEnqueueWriteBuffer (hashcat_ctx, device_param->opencl_command_queue, device_param->opencl_d_pws_buf, CL_TRUE, 0, 1 * sizeof (pw_t), &pw, 0, NULL, NULL) == -1) return -1;
@@ -398,6 +437,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
       if (device_param->is_cuda == true)
       {
         if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
+      }
+
+      if (device_param->is_hip == true)
+      {
+        if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_pws_buf, &pw, 1 * sizeof (pw_t)) == -1) return -1;
       }
 
       if (device_param->is_opencl == true)
@@ -450,6 +494,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
         if (hc_cuMemcpyDtoH (hashcat_ctx, device_param->hooks_buf, device_param->cuda_d_hooks, device_param->size_hooks) == -1) return -1;
       }
 
+      if (device_param->is_hip == true)
+      {
+        if (hc_hipMemcpyDtoH (hashcat_ctx, device_param->hooks_buf, device_param->hip_d_hooks, device_param->size_hooks) == -1) return -1;
+      }
+
       if (device_param->is_opencl == true)
       {
         if (hc_clEnqueueReadBuffer (hashcat_ctx, device_param->opencl_command_queue, device_param->opencl_d_hooks, CL_TRUE, 0, device_param->size_hooks, device_param->hooks_buf, 0, NULL, NULL) == -1) return -1;
@@ -460,6 +509,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
       if (device_param->is_cuda == true)
       {
         if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_hooks, device_param->hooks_buf, device_param->size_hooks) == -1) return -1;
+      }
+
+      if (device_param->is_hip == true)
+      {
+        if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_hooks, device_param->hooks_buf, device_param->size_hooks) == -1) return -1;
       }
 
       if (device_param->is_opencl == true)
@@ -502,6 +556,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
         if (hc_cuMemcpyDtoH (hashcat_ctx, device_param->hooks_buf, device_param->cuda_d_hooks, device_param->size_hooks) == -1) return -1;
       }
 
+      if (device_param->is_hip == true)
+      {
+        if (hc_hipMemcpyDtoH (hashcat_ctx, device_param->hooks_buf, device_param->hip_d_hooks, device_param->size_hooks) == -1) return -1;
+      }
+
       if (device_param->is_opencl == true)
       {
         if (hc_clEnqueueReadBuffer (hashcat_ctx, device_param->opencl_command_queue, device_param->opencl_d_hooks, CL_TRUE, 0, device_param->size_hooks, device_param->hooks_buf, 0, NULL, NULL) == -1) return -1;
@@ -512,6 +571,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
       if (device_param->is_cuda == true)
       {
         if (hc_cuMemcpyHtoD (hashcat_ctx, device_param->cuda_d_hooks, device_param->hooks_buf, device_param->size_hooks) == -1) return -1;
+      }
+
+      if (device_param->is_hip == true)
+      {
+        if (hc_hipMemcpyHtoD (hashcat_ctx, device_param->hip_d_hooks, device_param->hooks_buf, device_param->size_hooks) == -1) return -1;
       }
 
       if (device_param->is_opencl == true)
@@ -582,6 +646,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
     if (hc_cuMemcpyDtoH (hashcat_ctx, &num_cracked, device_param->cuda_d_result, sizeof (u32)) == -1) return -1;
   }
 
+  if (device_param->is_hip == true)
+  {
+    if (hc_hipMemcpyDtoH (hashcat_ctx, &num_cracked, device_param->hip_d_result, sizeof (u32)) == -1) return -1;
+  }
+
   if (device_param->is_opencl == true)
   {
     if (hc_clEnqueueReadBuffer (hashcat_ctx, device_param->opencl_command_queue, device_param->opencl_d_result, CL_TRUE, 0, sizeof (u32), &num_cracked, 0, NULL, NULL) == -1) return -1;
@@ -612,6 +681,20 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
     if (run_cuda_kernel_bzero   (hashcat_ctx, device_param, device_param->cuda_d_result,          device_param->size_results) == -1) return -1;
   }
 
+  if (device_param->is_hip == true)
+  {
+    device_param->kernel_params[15] = &device_param->hip_d_digests_buf;
+    device_param->kernel_params[17] = &device_param->hip_d_salt_bufs;
+    device_param->kernel_params[18] = &device_param->hip_d_esalt_bufs;
+
+    if (run_hip_kernel_bzero   (hashcat_ctx, device_param, device_param->hip_d_pws_buf,         device_param->size_pws)     == -1) return -1;
+    if (run_hip_kernel_bzero   (hashcat_ctx, device_param, device_param->hip_d_tmps,            device_param->size_tmps)    == -1) return -1;
+    if (run_hip_kernel_bzero   (hashcat_ctx, device_param, device_param->hip_d_hooks,           device_param->size_hooks)   == -1) return -1;
+    if (run_hip_kernel_bzero   (hashcat_ctx, device_param, device_param->hip_d_plain_bufs,      device_param->size_plains)  == -1) return -1;
+    if (run_hip_kernel_bzero   (hashcat_ctx, device_param, device_param->hip_d_digests_shown,   device_param->size_shown)   == -1) return -1;
+    if (run_hip_kernel_bzero   (hashcat_ctx, device_param, device_param->hip_d_result,          device_param->size_results) == -1) return -1;
+  }
+
   if (device_param->is_opencl == true)
   {
     device_param->kernel_params[15] = &device_param->opencl_d_digests_buf;
@@ -633,6 +716,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
       if (run_cuda_kernel_bzero (hashcat_ctx, device_param, device_param->cuda_d_rules_c, device_param->size_rules_c) == -1) return -1;
     }
 
+    if (device_param->is_hip == true)
+    {
+      if (run_hip_kernel_bzero (hashcat_ctx, device_param, device_param->hip_d_rules_c, device_param->size_rules_c) == -1) return -1;
+    }
+
     if (device_param->is_opencl == true)
     {
       if (run_opencl_kernel_bzero (hashcat_ctx, device_param, device_param->opencl_d_rules_c, device_param->size_rules_c) == -1) return -1;
@@ -647,6 +735,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
         if (run_cuda_kernel_bzero (hashcat_ctx, device_param, device_param->cuda_d_rules_c, device_param->size_rules_c) == -1) return -1;
       }
 
+      if (device_param->is_hip == true)
+      {
+        if (run_hip_kernel_bzero (hashcat_ctx, device_param, device_param->hip_d_rules_c, device_param->size_rules_c) == -1) return -1;
+      }
+
       if (device_param->is_opencl == true)
       {
         if (run_opencl_kernel_bzero (hashcat_ctx, device_param, device_param->opencl_d_rules_c, device_param->size_rules_c) == -1) return -1;
@@ -657,6 +750,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
       if (device_param->is_cuda == true)
       {
         if (run_cuda_kernel_bzero (hashcat_ctx, device_param, device_param->cuda_d_combs_c, device_param->size_combs) == -1) return -1;
+      }
+
+      if (device_param->is_hip == true)
+      {
+        if (run_hip_kernel_bzero (hashcat_ctx, device_param, device_param->hip_d_combs_c, device_param->size_combs) == -1) return -1;
       }
 
       if (device_param->is_opencl == true)
@@ -671,6 +769,11 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
         if (run_cuda_kernel_bzero (hashcat_ctx, device_param, device_param->cuda_d_bfs_c, device_param->size_bfs) == -1) return -1;
       }
 
+      if (device_param->is_hip == true)
+      {
+        if (run_hip_kernel_bzero (hashcat_ctx, device_param, device_param->hip_d_bfs_c, device_param->size_bfs) == -1) return -1;
+      }
+
       if (device_param->is_opencl == true)
       {
         if (run_opencl_kernel_bzero (hashcat_ctx, device_param, device_param->opencl_d_bfs_c, device_param->size_bfs) == -1) return -1;
@@ -679,18 +782,24 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
   }
 
   // check return
-//TODO: Add HIP in the above test.
-  if (num_cracked == 0 && false)
+
+  if (num_cracked == 0)
   {
     hc_thread_mutex_lock (status_ctx->mux_display);
+
+    if (device_param->is_cuda == true)
+    {
+      event_log_error (hashcat_ctx, "* Device #%u: ATTENTION! CUDA kernel self-test failed.", device_param->device_id + 1);
+    }
+
+    if (device_param->is_hip == true)
+    {
+      event_log_error (hashcat_ctx, "* Device #%u: ATTENTION! HIP kernel self-test failed.", device_param->device_id + 1);
+    }
 
     if (device_param->is_opencl == true)
     {
       event_log_error (hashcat_ctx, "* Device #%u: ATTENTION! OpenCL kernel self-test failed.", device_param->device_id + 1);
-    }
-    if (device_param->is_cuda == true)
-    {
-      event_log_error (hashcat_ctx, "* Device #%u: ATTENTION! CUDA kernel self-test failed.", device_param->device_id + 1);
     }
 
     event_log_warning (hashcat_ctx, "Your device driver installation is probably broken.");
@@ -699,8 +808,10 @@ static int selftest (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
 
     hc_thread_mutex_unlock (status_ctx->mux_display);
 
-    return -1;
+//TODO HIP
+    //return -1;
   }
+
   return 0;
 }
 
@@ -729,6 +840,11 @@ HC_API_CALL void *thread_selftest (void *p)
     if (hc_cuCtxSetCurrent (hashcat_ctx, device_param->cuda_context) == -1) return NULL;
   }
 
+  if (device_param->is_hip == true)
+  {
+    if (hc_hipCtxPushCurrent (hashcat_ctx, device_param->hip_context) == -1) return NULL;
+  }
+
   const int rc_selftest = selftest (hashcat_ctx, device_param);
 
   if (user_options->benchmark == true)
@@ -745,6 +861,16 @@ HC_API_CALL void *thread_selftest (void *p)
     {
       device_param->st_status = ST_STATUS_FAILED;
     }
+  }
+
+  if (device_param->is_cuda == true)
+  {
+    if (hc_cuCtxSetCurrent (hashcat_ctx, NULL) == -1) return NULL;
+  }
+
+  if (device_param->is_hip == true)
+  {
+    if (hc_hipCtxPopCurrent (hashcat_ctx, &device_param->hip_context) == -1) return NULL;
   }
 
   return NULL;

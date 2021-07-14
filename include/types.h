@@ -182,6 +182,7 @@ typedef enum vendor_id
   VENDOR_ID_NV            = (1U << 5),
   VENDOR_ID_POCL          = (1U << 6),
   VENDOR_ID_AMD_USE_INTEL = (1U << 7),
+  VENDOR_ID_AMD_USE_HIP   = (1U << 8),
   VENDOR_ID_GENERIC       = (1U << 31)
 
 } vendor_id_t;

@@ -146,6 +146,7 @@ static int autotune (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
 
     int CL_rc;
     int CU_rc;
+    int HIP_rc;
 
     if (device_param->is_cuda == true)
     {
@@ -156,9 +157,9 @@ static int autotune (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
 
     if (device_param->is_hip == true)
     {
-      CU_rc = run_hip_kernel_atinit (hashcat_ctx, device_param, device_param->hip_d_pws_buf, kernel_power_max);
+      HIP_rc = run_hip_kernel_atinit (hashcat_ctx, device_param, device_param->hip_d_pws_buf, kernel_power_max);
 
-      if (CU_rc == -1) return -1;
+      if (HIP_rc == -1) return -1;
     }
 
     if (device_param->is_opencl == true)
@@ -386,23 +387,23 @@ static int autotune (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
 
   if (device_param->is_hip == true)
   {
-    int CU_rc;
+    int HIP_rc;
 
-    CU_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_pws_buf, 0, device_param->size_pws);
+    HIP_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_pws_buf, 0, device_param->size_pws);
 
-    if (CU_rc == -1) return -1;
+    if (HIP_rc == -1) return -1;
 
-    CU_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_plain_bufs, 0, device_param->size_plains);
+    HIP_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_plain_bufs, 0, device_param->size_plains);
 
-    if (CU_rc == -1) return -1;
+    if (HIP_rc == -1) return -1;
 
-    CU_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_digests_shown, 0, device_param->size_shown);
+    HIP_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_digests_shown, 0, device_param->size_shown);
 
-    if (CU_rc == -1) return -1;
+    if (HIP_rc == -1) return -1;
 
-    CU_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_result, 0, device_param->size_results);
+    HIP_rc = run_hip_kernel_memset (hashcat_ctx, device_param, device_param->hip_d_result, 0, device_param->size_results);
 
-    if (CU_rc == -1) return -1;
+    if (HIP_rc == -1) return -1;
   }
 
   if (device_param->is_opencl == true)

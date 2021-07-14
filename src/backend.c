@@ -7783,11 +7783,10 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
       }
 
       // some attributes have to be hardcoded because they are used for instance in the build options
-
       device_param->device_local_mem_type     = CL_LOCAL;
       device_param->opencl_device_type        = CL_DEVICE_TYPE_GPU;
-      device_param->opencl_device_vendor_id   = VENDOR_ID_NV;
-      device_param->opencl_platform_vendor_id = VENDOR_ID_NV;
+      device_param->opencl_device_vendor_id   = VENDOR_ID_AMD_USE_HIP;
+      device_param->opencl_platform_vendor_id = VENDOR_ID_AMD_USE_HIP;
 
       // or in the cached kernel checksum
 
@@ -9642,7 +9641,7 @@ static bool load_kernel (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_p
 
       char **hiprtc_options = (char **) hccalloc (4 + strlen (build_options_buf) + 1, sizeof (char *)); // ...
 
-      hiprtc_options[0] = "";
+      hiprtc_options[0] = "--gpu-max-threads-per-block=64";
       hiprtc_options[1] = "";
       hiprtc_options[2] = "";
 
@@ -13431,6 +13430,7 @@ int backend_session_begin (hashcat_ctx_t *hashcat_ctx)
         }
         else
         {
+          device_param->kernel_threads_min = MIN (device_param->kernel_threads_min, 64);
           device_param->kernel_threads_max = MIN (device_param->kernel_threads_max, 64);
         }
       }

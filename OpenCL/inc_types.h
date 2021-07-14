@@ -6,12 +6,12 @@
 #ifndef _INC_TYPES_H
 #define _INC_TYPES_H
 
-#if defined IS_CUDA || defined IS_HIP
+#if defined IS_CUDA
 //https://docs.nvidia.com/cuda/nvrtc/index.html#integer-size
 typedef unsigned char      uchar;
 typedef unsigned short     ushort;
 typedef unsigned int       uint;
-typedef unsigned long long xulong;
+typedef unsigned long long ulong;
 #endif
 
 

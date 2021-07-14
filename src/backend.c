@@ -5098,9 +5098,9 @@ int run_kernel (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param, con
 
   if (device_param->is_hip == true)
   {
-    if ((device_param->kernel_dynamic_local_mem_size_memset % device_param->device_local_mem_size) == 0)
+    if (((device_param->kernel_dynamic_local_mem_size_memset % device_param->device_local_mem_size) == 0) && (hashconfig->hash_mode == 3200))
     {
-      dynamic_shared_mem = 0;
+      dynamic_shared_mem = 65536;
     }
   }
 
@@ -7783,7 +7783,7 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
       }
 
       // some attributes have to be hardcoded because they are used for instance in the build options
-      device_param->device_local_mem_type     = CL_LOCAL;
+      device_param->device_local_mem_type     = CL_LOCAL; 
       device_param->opencl_device_type        = CL_DEVICE_TYPE_GPU;
       device_param->opencl_device_vendor_id   = VENDOR_ID_AMD_USE_HIP;
       device_param->opencl_platform_vendor_id = VENDOR_ID_AMD_USE_HIP;
@@ -8023,7 +8023,22 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
         // device_name
 
-        if (hc_clGetDeviceInfo (hashcat_ctx, device_param->opencl_device, CL_DEVICE_NAME, 0, NULL, &param_value_size) == -1) return -1;
+        #define CHECK_BOARD_NAME_AMD 1
+        cl_int rc_board_name_amd = CL_INVALID_VALUE;
+
+        if (CHECK_BOARD_NAME_AMD)
+        {
+          backend_ctx_t *backend_ctx = hashcat_ctx->backend_ctx;
+
+          OCL_PTR *ocl = (OCL_PTR *) backend_ctx->ocl;
+
+          rc_board_name_amd = ocl->clGetDeviceInfo (device_param->opencl_device, CL_DEVICE_BOARD_NAME_AMD, 0, NULL, NULL);
+        }
+
+        if (rc_board_name_amd == CL_SUCCESS)
+        {
+          if (hc_clGetDeviceInfo (hashcat_ctx, device_param->opencl_device, CL_DEVICE_NAME, 0, NULL, &param_value_size) == -1) return -1;
+        }
 
         char *device_name = (char *) hcmalloc (param_value_size);
 

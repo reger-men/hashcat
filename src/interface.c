@@ -265,6 +265,11 @@ int hashconfig_init (hashcat_ctx_t *hashcat_ctx)
     }
   }
 
+  if (user_options->multiply_accel_disable == true)
+  {
+    hashconfig->opts_type |= OPTS_TYPE_MP_MULTI_DISABLE;
+  }
+
   if (user_options->self_test_disable == true)
   {
     hashconfig->opts_type |= OPTS_TYPE_SELF_TEST_DISABLE;
@@ -616,7 +621,7 @@ u64 default_hook_size (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED
 
 char default_separator (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra)
 {
-  return user_options->separator;
+  return user_options_extra->separator;
 }
 
 bool default_dictstat_disable (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra)

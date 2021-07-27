@@ -7,7 +7,7 @@
            |_____|     /___________/     |_____|  /_____/        /_______|
                  :                             :                         :
 
-hashcat v6.2.2
+hashcat v6.2.3
 ==============
 
 AMD GPUs on Linux require "RadeonOpenCompute (ROCm)" Software Platform (3.1 or later)
@@ -155,6 +155,9 @@ NVIDIA GPUs require "NVIDIA Driver" (440.64 or later) and "CUDA Toolkit" (9.0 or
 - SIP digest authentication (MD5)
 - IKE-PSK MD5
 - IKE-PSK SHA1
+- SNMPv3 HMAC-MD5-96
+- SNMPv3 HMAC-MD5-96/HMAC-SHA1-96
+- SNMPv3 HMAC-SHA1-96
 - WPA-EAPOL-PBKDF2
 - WPA-EAPOL-PMK
 - WPA-PBKDF2-PMKID+EAPOL

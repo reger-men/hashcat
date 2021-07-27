@@ -651,6 +651,7 @@ typedef enum user_options_defaults
   BACKEND_INFO             = false,
   BACKEND_VECTOR_WIDTH     = 0,
   OPTIMIZED_KERNEL_ENABLE  = false,
+  MULTIPLY_ACCEL_DISABLE   = false,
   OUTFILE_AUTOHEX          = true,
   OUTFILE_CHECK_TIMER      = 5,
   OUTFILE_FORMAT           = 3,
@@ -670,7 +671,6 @@ typedef enum user_options_defaults
   SCRYPT_TMTO              = 0,
   SEGMENT_SIZE             = 33554432,
   SELF_TEST_DISABLE        = false,
-  SEPARATOR                = ':',
   SHOW                     = false,
   SKIP                     = 0,
   SLOW_CANDIDATES          = false,
@@ -760,6 +760,7 @@ typedef enum user_options_map
   IDX_NONCE_ERROR_CORRECTIONS   = 0xff2d,
   IDX_OPENCL_DEVICE_TYPES       = 'D',
   IDX_OPTIMIZED_KERNEL_ENABLE   = 'O',
+  IDX_MULTIPLY_ACCEL_DISABLE    = 'M',
   IDX_OUTFILE_AUTOHEX_DISABLE   = 0xff2e,
   IDX_OUTFILE_CHECK_DIR         = 0xff2f,
   IDX_OUTFILE_CHECK_TIMER       = 0xff30,
@@ -1074,7 +1075,7 @@ typedef struct hc_fp
   bool        is_zip;
   int         bom_size;
 
-  char       *mode;
+  const char *mode;
   const char *path;
 
 } HCFILE;
@@ -1116,6 +1117,8 @@ typedef struct hc_device_param
   int     sm_minor;
   u32     kernel_exec_timeout;
 
+  u32     kernel_preferred_wgs_multiple;
+
   st_status_t st_status;
 
   int     vector_width;
@@ -1137,6 +1140,7 @@ typedef struct hc_device_param
   u32     kernel_wgs_amp;
   u32     kernel_wgs_tm;
   u32     kernel_wgs_memset;
+  u32     kernel_wgs_bzero;
   u32     kernel_wgs_atinit;
   u32     kernel_wgs_utf8toutf16le;
   u32     kernel_wgs_decompress;
@@ -1162,6 +1166,7 @@ typedef struct hc_device_param
   u32     kernel_preferred_wgs_multiple_amp;
   u32     kernel_preferred_wgs_multiple_tm;
   u32     kernel_preferred_wgs_multiple_memset;
+  u32     kernel_preferred_wgs_multiple_bzero;
   u32     kernel_preferred_wgs_multiple_atinit;
   u32     kernel_preferred_wgs_multiple_utf8toutf16le;
   u32     kernel_preferred_wgs_multiple_decompress;
@@ -1187,6 +1192,7 @@ typedef struct hc_device_param
   u64     kernel_local_mem_size_amp;
   u64     kernel_local_mem_size_tm;
   u64     kernel_local_mem_size_memset;
+  u64     kernel_local_mem_size_bzero;
   u64     kernel_local_mem_size_atinit;
   u64     kernel_local_mem_size_utf8toutf16le;
   u64     kernel_local_mem_size_decompress;
@@ -1212,6 +1218,7 @@ typedef struct hc_device_param
   u64     kernel_dynamic_local_mem_size_amp;
   u64     kernel_dynamic_local_mem_size_tm;
   u64     kernel_dynamic_local_mem_size_memset;
+  u64     kernel_dynamic_local_mem_size_bzero;
   u64     kernel_dynamic_local_mem_size_atinit;
   u64     kernel_dynamic_local_mem_size_utf8toutf16le;
   u64     kernel_dynamic_local_mem_size_decompress;
@@ -1373,6 +1380,7 @@ typedef struct hc_device_param
   void   *kernel_params_amp[PARAMCNT];
   void   *kernel_params_tm[PARAMCNT];
   void   *kernel_params_memset[PARAMCNT];
+  void   *kernel_params_bzero[PARAMCNT];
   void   *kernel_params_atinit[PARAMCNT];
   void   *kernel_params_utf8toutf16le[PARAMCNT];
   void   *kernel_params_decompress[PARAMCNT];
@@ -1394,6 +1402,9 @@ typedef struct hc_device_param
 
   u32     kernel_params_memset_buf32[PARAMCNT];
   u64     kernel_params_memset_buf64[PARAMCNT];
+
+  u32     kernel_params_bzero_buf32[PARAMCNT];
+  u64     kernel_params_bzero_buf64[PARAMCNT];
 
   u32     kernel_params_atinit_buf32[PARAMCNT];
   u64     kernel_params_atinit_buf64[PARAMCNT];
@@ -1439,6 +1450,7 @@ typedef struct hc_device_param
   CUfunction        cuda_function_amp;
   CUfunction        cuda_function_tm;
   CUfunction        cuda_function_memset;
+  CUfunction        cuda_function_bzero;
   CUfunction        cuda_function_atinit;
   CUfunction        cuda_function_utf8toutf16le;
   CUfunction        cuda_function_decompress;
@@ -1519,6 +1531,7 @@ typedef struct hc_device_param
   HIPfunction       hip_function_amp;
   HIPfunction       hip_function_tm;
   HIPfunction       hip_function_memset;
+  HIPfunction       hip_function_bzero;
   HIPfunction       hip_function_atinit;
   HIPfunction       hip_function_utf8toutf16le;
   HIPfunction       hip_function_decompress;
@@ -1604,6 +1617,7 @@ typedef struct hc_device_param
   cl_kernel         opencl_kernel_amp;
   cl_kernel         opencl_kernel_tm;
   cl_kernel         opencl_kernel_memset;
+  cl_kernel         opencl_kernel_bzero;
   cl_kernel         opencl_kernel_atinit;
   cl_kernel         opencl_kernel_utf8toutf16le;
   cl_kernel         opencl_kernel_decompress;
@@ -1784,8 +1798,6 @@ typedef struct hwmon_ctx
   void *hm_iokit;
 
   hm_attrs_t *hm_device;
-
-  ADLOD6MemClockState *od_clock_mem_status;
 
 } hwmon_ctx_t;
 
@@ -2090,6 +2102,7 @@ typedef struct user_options
   bool         skip_chgd;
   bool         limit_chgd;
   bool         scrypt_tmto_chgd;
+  bool         separator_chgd;
 
   bool         advice_disable;
   bool         benchmark;
@@ -2119,6 +2132,7 @@ typedef struct user_options
   bool         backend_ignore_opencl;
   bool         backend_info;
   bool         optimized_kernel_enable;
+  bool         multiply_accel_disable;
   bool         outfile_autohex;
   bool         potfile_disable;
   bool         progress_only;
@@ -2158,7 +2172,7 @@ typedef struct user_options
   char        *potfile_path;
   char        *restore_file_path;
   char       **rp_files;
-  char         separator;
+  char        *separator;
   char        *truecrypt_keyfiles;
   char        *veracrypt_keyfiles;
   const char  *custom_charset_1;
@@ -2223,6 +2237,8 @@ typedef struct user_options_extra
   u32 rule_len_l;
 
   u32 wordlist_mode;
+
+  char   separator;
 
   char  *hc_hash;   // can be filename or string
 

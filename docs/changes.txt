@@ -1,22 +1,69 @@
-* changes v6.2.2 -> v6.2.x
-
-##
-## Algorithms
-##
-
-- Added hash-mode: VeraCrypt PBKDF2-HMAC-Streebog-512 + XTS 512 bit + boot-mode
-- Added hash-mode: VeraCrypt PBKDF2-HMAC-Streebog-512 + XTS 1024 bit + boot-mode
-- Added hash-mode: VeraCrypt PBKDF2-HMAC-Streebog-512 + XTS 1536 bit + boot-mode
-- Added hash-mode: AES-128-ECB NOKDF (PT = $salt, key = $pass)
-- Added hash-mode: AES-192-ECB NOKDF (PT = $salt, key = $pass)
-- Added hash-mode: AES-256-ECB NOKDF (PT = $salt, key = $pass)
-- Added hash-mode: iPhone passcode (UID key + System Keybag)
-- Added hash-mode: MetaMask Wallet
+* changes v6.2.3 -> v6.2.x
 
 ##
 ## Features
 ##
 
+- Added option --multiply-accel-disable (short: -M) to disable multiply the kernel-accel with the multiprocessor count automatism
+
+##
+## Bugs
+##
+
+- Fixed autotune unitialized tmps variable for slow hashes by calling _init kernel before calling _loop kernel
+- Fixed datatype in function sha384_hmac_init_vector_128() that could come into effect if vector datatype was manually set
+- Fixed false negative in all VeraCrypt hash-modes if both conditions are met: 1. use CPU for cracking and 2. PIM range was used
+
+##
+## Improvements
+##
+
+- AMD GPUs: Add inline assembly code for md5crypt/sha256crypt, PDF 1.7, 7-Zip, RAR3, Samsung Android and Windows Phone 8+
+- Blake Kernels: Optimize BLAKE2B_ROUND() 64 bit rotates giving a 5% performance increase
+- Blowfish Kernels: Backport optimizations reducing bank conflicts from bcrypt to Password Safe v2 and Open Document Format (ODF) 1.1
+- Brain Session: Adds hashconfig specific opti_type and opts_type parameters to hashcat session computation to cover features like -O and -M
+- Kernel Threads: Use warp size / wavefront size query instead of hardcoded values as base for kernel threads
+- Shared Memory: Calculate kernel dynamic memory size based on CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK_OPTIN
+- Slow Kernels: Set some of the slowest kernels to OPTS_TYPE_MP_MULTI_DISABLE
+
+##
+## Technical
+##
+
+- ADL: Updated support for AMD Display Library to 15.0, updated datatypes and added support for OverDrive 7 and 8 based GPUs
+- Commandline: Throw an error if separator character given by the user with -p option is not exactly 1 byte
+- HIP Kernels: Got rid of hip/hip_runtime.h dependancy to enable more easy integration of the HIP backend on Windows
+- Kernel Cache: Add kernel threads into hash computation which is later used in the kernel cache filename
+- SCRYPT Kernels: Add more optimized values for some new NV/AMD GPUs
+
+##
+## Algorithms
+##
+
+- Added hash-mode: SNMPv3 HMAC-SHA1-96
+- Added hash-mode: SNMPv3 HMAC-MD5-96
+- Added hash-mode: SNMPv3 HMAC-MD5-96/HMAC-SHA1-96
+
+* changes v6.2.2 -> v6.2.3
+
+##
+## Algorithms
+##
+
+- Added hash-mode: AES-128-ECB NOKDF (PT = $salt, key = $pass)
+- Added hash-mode: AES-192-ECB NOKDF (PT = $salt, key = $pass)
+- Added hash-mode: AES-256-ECB NOKDF (PT = $salt, key = $pass)
+- Added hash-mode: iPhone passcode (UID key + System Keybag)
+- Added hash-mode: MetaMask Wallet
+- Added hash-mode: VeraCrypt PBKDF2-HMAC-Streebog-512 + XTS 512 bit  + boot-mode
+- Added hash-mode: VeraCrypt PBKDF2-HMAC-Streebog-512 + XTS 1024 bit + boot-mode
+- Added hash-mode: VeraCrypt PBKDF2-HMAC-Streebog-512 + XTS 1536 bit + boot-mode
+
+##
+## Features
+##
+
+- Added new backend support for HIP, an OpenCL alternative API for AMD GPUs (similar to CUDA for NVIDIA GPUs)
 - Added option --markov-inverse to inverse markov statistics, with the idea of reversing the order of the password candidates
 - Added temperature watchdog and fanspeed readings for CPU and GPU on macOS using iokit
 - Added temperature watchdog and utilization for CPU on linux using sysfs and procfs
@@ -25,11 +72,12 @@
 ## Bugs
 ##
 
-- Fixed 'E' rule in pure kernel mode which was ignoring letters that are in positions that are multiples of 4
 - Fixed access violation in hashconfig_destroy if hashcat_ctx_t is only partially initialized
+- Fixed 'E' rule in pure kernel mode which was ignoring letters that are in positions that are multiples of 4
 - Fixed false negative in hash-mode 15900 (DPAPI masterkey file v2) if password was longer than 64 characters
 - Fixed hashcat_ctx leak and refactor module and kernel existence checks
 - Fixed integer overflow in Recovered/Time status view column caused by division > 0 but < 1
+- Fixed invalid ETA if --limit was specified, several salts are in a hash list and some of them were found in a potfile
 - Fixed memory leak in iconv_ctx and iconv_tmp in backend.c
 - Fixed missing option to automatically disable kernel cache in -m 25600 and -m 25800
 - Fixed out-of-boundary write in slow candidates mode in combinator attack
@@ -40,13 +88,13 @@
 
 - Alias Devices: Show a warning in case the user specifically listed a device to use which in a later step is skipped because it is an alias of another active device
 - Backend Information: Added new column showing the PCI Address per CUDA/OpenCL device to easier identify broken cards
+- Bcrypt-SHA1/MD5 Kernels: Get rid of local memory use for binary to hex conversion to avoid false negatives on several OpenCL runtimes
 - CPU Affinity: Allow mask up to 64 processors in Windows and remove call to SetThreadAffinityMask as SetProcessAffinityMask limits all threads in process
 - Debug Rules: HEX-ify rules debug non-rules outputs that contain colons
 - KeePass: Increase supported size for KeePass 1 databases from 300kB to 16MB
 - Potfile: Disable potfile for hash-mode 99999
 - VeraCrypt: Increase password length support for non-boot volumes from 64 to 128
 - WPA Kernels: Increased performance by 3.5% for backend devices controlled by CUDA backend
-- Bcrypt-SHA1/MD5 Kernels: Get rid of local memory use for binary to hex conversion to avoid false negatives on several OpenCL runtimes
 
 ##
 ## Technical
@@ -62,6 +110,7 @@
 - OpenCL Runtime: Workaround JiT crash (SC failed. No reason given.) on macOS by limiting local memory allocations to 32k
 - Status View: Include time and duration info when pausing and resuming
 - Tests: Changed tests for VeraCrypt from -a 0 to -a 3, because password extension is not available to all shells
+- WinZip Kernel: Increase supported data length from 8k to 16mb
 
 * changes v6.2.1 -> v6.2.2
 

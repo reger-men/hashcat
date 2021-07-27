@@ -9,18 +9,19 @@
 #include <stdio.h>
 #include <errno.h>
 
-static const char CL_VENDOR_AMD1[]            = "Advanced Micro Devices, Inc.";
-static const char CL_VENDOR_AMD2[]            = "AuthenticAMD";
-static const char CL_VENDOR_AMD_USE_INTEL[]   = "GenuineIntel";
-static const char CL_VENDOR_APPLE[]           = "Apple";
-static const char CL_VENDOR_APPLE_USE_AMD[]   = "AMD";
-static const char CL_VENDOR_APPLE_USE_NV[]    = "NVIDIA";
-static const char CL_VENDOR_APPLE_USE_INTEL[] = "Intel Inc.";
-static const char CL_VENDOR_INTEL_BEIGNET[]   = "Intel";
-static const char CL_VENDOR_INTEL_SDK[]       = "Intel(R) Corporation";
-static const char CL_VENDOR_MESA[]            = "Mesa";
-static const char CL_VENDOR_NV[]              = "NVIDIA Corporation";
-static const char CL_VENDOR_POCL[]            = "The pocl project";
+static const char CL_VENDOR_AMD1[]              = "Advanced Micro Devices, Inc.";
+static const char CL_VENDOR_AMD2[]              = "AuthenticAMD";
+static const char CL_VENDOR_AMD_USE_INTEL[]     = "GenuineIntel";
+static const char CL_VENDOR_APPLE[]             = "Apple";
+static const char CL_VENDOR_APPLE_USE_AMD[]     = "AMD";
+static const char CL_VENDOR_APPLE_USE_NV[]      = "NVIDIA";
+static const char CL_VENDOR_APPLE_USE_INTEL[]   = "Intel";
+static const char CL_VENDOR_APPLE_USE_INTEL2[]  = "Intel Inc.";
+static const char CL_VENDOR_INTEL_BEIGNET[]     = "Intel";
+static const char CL_VENDOR_INTEL_SDK[]         = "Intel(R) Corporation";
+static const char CL_VENDOR_MESA[]              = "Mesa";
+static const char CL_VENDOR_NV[]                = "NVIDIA Corporation";
+static const char CL_VENDOR_POCL[]              = "The pocl project";
 
 int  cuda_init    (hashcat_ctx_t *hashcat_ctx);
 void cuda_close   (hashcat_ctx_t *hashcat_ctx);
@@ -69,8 +70,11 @@ int hc_cuInit                    (hashcat_ctx_t *hashcat_ctx, unsigned int Flags
 int hc_cuLaunchKernel            (hashcat_ctx_t *hashcat_ctx, CUfunction f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, CUstream hStream, void **kernelParams, void **extra);
 int hc_cuMemAlloc                (hashcat_ctx_t *hashcat_ctx, CUdeviceptr *dptr, size_t bytesize);
 int hc_cuMemcpyDtoD              (hashcat_ctx_t *hashcat_ctx, CUdeviceptr dstDevice, CUdeviceptr srcDevice, size_t ByteCount);
+int hc_cuMemcpyDtoDAsync         (hashcat_ctx_t *hashcat_ctx, CUdeviceptr dstDevice, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream);
 int hc_cuMemcpyDtoH              (hashcat_ctx_t *hashcat_ctx, void *dstHost, CUdeviceptr srcDevice, size_t ByteCount);
+int hc_cuMemcpyDtoHAsync         (hashcat_ctx_t *hashcat_ctx, void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream);
 int hc_cuMemcpyHtoD              (hashcat_ctx_t *hashcat_ctx, CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount);
+int hc_cuMemcpyHtoDAsync         (hashcat_ctx_t *hashcat_ctx, CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream);
 int hc_cuMemFree                 (hashcat_ctx_t *hashcat_ctx, CUdeviceptr dptr);
 int hc_cuModuleGetFunction       (hashcat_ctx_t *hashcat_ctx, CUfunction *hfunc, CUmodule hmod, const char *name);
 int hc_cuModuleLoadDataEx        (hashcat_ctx_t *hashcat_ctx, CUmodule *module, const void *image, unsigned int numOptions, CUjit_option *options, void **optionValues);

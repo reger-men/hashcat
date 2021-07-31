@@ -141,7 +141,7 @@ static int autotune (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
   {
     // from here it's clear we are allowed to autotune
     // so let's init some fake words
-
+    
     const u32 kernel_power_max = device_param->hardware_power * kernel_accel_max;
 
     int CL_rc;
@@ -262,6 +262,7 @@ static int autotune (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
 
         kernel_accel = kernel_accel_try;
       }
+      kernel_accel = (hashconfig->hash_mode != 10700) ? kernel_accel:32;
     }
 
     // now find the middle balance between kernel_accel and kernel_loops

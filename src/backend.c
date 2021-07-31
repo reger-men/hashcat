@@ -8707,7 +8707,11 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
         CL_rc = hc_clCreateContext (hashcat_ctx, properties, 1, &device_param->opencl_device, NULL, NULL, &context);
         */
 
-        if (hc_clCreateContext (hashcat_ctx, NULL, 1, &device_param->opencl_device, NULL, NULL, &context) == -1) return -1;
+        if (hc_clCreateContext (hashcat_ctx, NULL, 1, &device_param->opencl_device, NULL, NULL, &context) == -1)
+        {
+          device_param->skipped = true;
+          continue;
+        }
 
         /**
          * create command-queue
@@ -8715,10 +8719,15 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
         cl_command_queue command_queue;
 
-        if (hc_clCreateCommandQueue (hashcat_ctx, context, device_param->opencl_device, 0, &command_queue) == -1) return -1;
+        if (hc_clCreateCommandQueue (hashcat_ctx, context, device_param->opencl_device, 0, &command_queue) == -1)
+        {
+          device_param->skipped = true;
+          continue;
+        }
 
         if ((device_param->opencl_device_type & CL_DEVICE_TYPE_GPU) && (device_param->opencl_platform_vendor_id == VENDOR_ID_AMD))
         {
+          /*
           #define RUN_INSTRUCTION_CHECKS()
             device_param->has_vadd     = opencl_test_instruction (hashcat_ctx, context, device_param->opencl_device, "__kernel void test () { uint r1; __asm__ __volatile__ (\"V_ADD_U32     %0, vcc, 0, 0;\"      : \"=v\"(r1)); }"); \
             device_param->has_vaddc    = opencl_test_instruction (hashcat_ctx, context, device_param->opencl_device, "__kernel void test () { uint r1; __asm__ __volatile__ (\"V_ADDC_U32    %0, vcc, 0, 0, vcc;\" : \"=v\"(r1)); }"); \
@@ -8761,6 +8770,7 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
           }
 
           #undef RUN_INSTRUCTION_CHECKS
+          */
         }
 
         if ((device_param->opencl_device_type & CL_DEVICE_TYPE_GPU) && (device_param->opencl_platform_vendor_id == VENDOR_ID_NV))

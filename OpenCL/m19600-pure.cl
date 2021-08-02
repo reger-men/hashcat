@@ -802,7 +802,7 @@ KERNEL_FQ void m19600_comp (KERN_ATTR_TMPS_ESALT (krb5tgs_17_tmp_t, krb5tgs_17_t
 
       switch (remaining_blocks)
       {
-        case 0:
+        case 0: {
 
           last_block[0] = esalt_bufs[digests_offset].edata2[last_block_position + 0];
 
@@ -816,8 +816,8 @@ KERNEL_FQ void m19600_comp (KERN_ATTR_TMPS_ESALT (krb5tgs_17_tmp_t, krb5tgs_17_t
           n_1_crafted[2] = decrypted_block[2];
           n_1_crafted[3] = decrypted_block[3];
           break;
-
-        case 1:
+        }
+        case 1: {
 
           last_block[0] = esalt_bufs[digests_offset].edata2[last_block_position + 0];
 
@@ -849,8 +849,8 @@ KERNEL_FQ void m19600_comp (KERN_ATTR_TMPS_ESALT (krb5tgs_17_tmp_t, krb5tgs_17_t
             n_1_crafted[3] = decrypted_block[3];
           }
           break;
-
-        case 2:
+        }
+        case 2: {
 
           last_block[0] = esalt_bufs[digests_offset].edata2[last_block_position + 0];
           last_block[1] = esalt_bufs[digests_offset].edata2[last_block_position + 1];
@@ -888,8 +888,8 @@ KERNEL_FQ void m19600_comp (KERN_ATTR_TMPS_ESALT (krb5tgs_17_tmp_t, krb5tgs_17_t
             n_1_crafted[3] = decrypted_block[3];
           }
           break;
-
-        case 3:
+        }
+        case 3: {
 
           last_block[0] = esalt_bufs[digests_offset].edata2[last_block_position + 0];
           last_block[1] = esalt_bufs[digests_offset].edata2[last_block_position + 1];
@@ -932,8 +932,8 @@ KERNEL_FQ void m19600_comp (KERN_ATTR_TMPS_ESALT (krb5tgs_17_tmp_t, krb5tgs_17_t
             n_1_crafted[3] = (last_block[3] & mask) | (decrypted_block[3] & (mask ^ 0xffffffff));
           }
           break;
-
-        case 4:
+        }
+        case 4: {
 
           last_block[0] = esalt_bufs[digests_offset].edata2[last_block_position + 0];
           last_block[1] = esalt_bufs[digests_offset].edata2[last_block_position + 1];
@@ -955,9 +955,10 @@ KERNEL_FQ void m19600_comp (KERN_ATTR_TMPS_ESALT (krb5tgs_17_tmp_t, krb5tgs_17_t
           last_plaintext[2] = hc_swap32_S (last_plaintext[2]);
           last_plaintext[3] = hc_swap32_S (last_plaintext[3]);
           break;
-
-        default:
+        }
+        default: {
           return;
+        }
       }
 
       // then decrypt this newly created n-1 with 'ke'

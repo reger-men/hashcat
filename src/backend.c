@@ -14126,10 +14126,13 @@ void backend_session_destroy (hashcat_ctx_t *hashcat_ctx)
       if (device_param->hip_d_st_salts_buf)   hc_hipMemFree (hashcat_ctx, device_param->hip_d_st_salts_buf);
       if (device_param->hip_d_st_esalts_buf)  hc_hipMemFree (hashcat_ctx, device_param->hip_d_st_esalts_buf);
 
-      if (device_param->hip_event1)           hc_hipEventDestroy (hashcat_ctx, device_param->hip_event1);
-      if (device_param->hip_event2)           hc_hipEventDestroy (hashcat_ctx, device_param->hip_event2);
+      if(!device_param->skipped_warning) {
+        if (device_param->hip_event1)           hc_hipEventDestroy (hashcat_ctx, device_param->hip_event1);
+        if (device_param->hip_event2)           hc_hipEventDestroy (hashcat_ctx, device_param->hip_event2);
+        if (device_param->hip_stream)           hc_hipStreamDestroy (hashcat_ctx, device_param->hip_stream);
+      }
 
-      if (device_param->hip_stream)           hc_hipStreamDestroy (hashcat_ctx, device_param->hip_stream);
+      
 
       if (device_param->hip_module)           hc_hipModuleUnload (hashcat_ctx, device_param->hip_module);
       if (device_param->hip_module_mp)        hc_hipModuleUnload (hashcat_ctx, device_param->hip_module_mp);

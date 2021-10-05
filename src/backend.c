@@ -7090,53 +7090,8 @@ int backend_ctx_init (hashcat_ctx_t *hashcat_ctx)
 
       backend_ctx->hip_runtimeVersion = hip_runtimeVersion;
 
-      if (hip_runtimeVersion < 1000)
-      {
-        if (hip_runtimeVersion < 404)
-        {
-          event_log_warning (hashcat_ctx, "Unsupported AMD HIP runtime version '%d.%d' detected! Falling back to OpenCL...", hip_runtimeVersion / 100, hip_runtimeVersion % 10);
-          event_log_warning (hashcat_ctx, NULL);
 
-          rc_hip_init    = -1;
-          rc_hiprtc_init = -1;
 
-          backend_ctx->rc_hip_init    = rc_hip_init;
-          backend_ctx->rc_hiprtc_init = rc_hiprtc_init;
-
-          backend_ctx->hip    = NULL;
-          backend_ctx->hiprtc = NULL;
-
-          // if we call this, opencl stops working?! so we just zero the pointer
-          // this causes a memleak and an open filehandle but what can we do?
-          // hip_close    (hashcat_ctx);
-          // hiprtc_close (hashcat_ctx);
-        }
-      }
-      else
-      {
-        // we need to wait for 4.4 to be released to continue here
-        // ignore this backend
-
-        int hip_version_major = (hip_runtimeVersion - 0) / 10000000;
-        int hip_version_minor = (hip_runtimeVersion - (hip_version_major * 10000000)) / 100000;
-        int hip_version_patch = (hip_runtimeVersion - (hip_version_major * 10000000) - (hip_version_minor * 100000));
-
-        event_log_warning (hashcat_ctx, "Unsupported AMD HIP runtime version '%d.%d.%d' detected! Falling back to OpenCL...", hip_version_major, hip_version_minor, hip_version_patch);
-        event_log_warning (hashcat_ctx, NULL);
-
-        rc_hip_init    = -1;
-        rc_hiprtc_init = -1;
-
-        backend_ctx->rc_hip_init    = rc_hip_init;
-        backend_ctx->rc_hiprtc_init = rc_hiprtc_init;
-
-        backend_ctx->hip = NULL;
-
-        // if we call this, opencl stops working?! so we just zero the pointer
-        // this causes a memleak and an open filehandle but what can we do?
-        // hip_close    (hashcat_ctx);
-        // hiprtc_close (hashcat_ctx);
-      }
     }
     else
     {
@@ -10394,21 +10349,22 @@ static bool load_kernel (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_p
 
       hc_asprintf (&hiprtc_options[0], "--gpu-max-threads-per-block=%d", (user_options->kernel_threads_chgd == true) ? user_options->kernel_threads : device_param->kernel_threads_max);
 
-      /* 4.3 linux
+
       hiprtc_options[1] = "-I";
-      hiprtc_options[2] = "/opt/rocm/hip/bin/include";
+      hiprtc_options[2] = "/opt/rocm/hip/include";
       hiprtc_options[3] = "-I";
       hiprtc_options[4] = "/opt/rocm/include";
       hiprtc_options[5] = "-I";
-      */
+      hiprtc_options[6] = folder_config->cpath_real;
 
+      /* 4.3 linux
       hiprtc_options[1] = "-nocudainc";
       hiprtc_options[2] = "-nocudalib";
       hiprtc_options[3] = "";
       hiprtc_options[4] = "";
       hiprtc_options[5] = "-I";
       hiprtc_options[6] = folder_config->cpath_real;
-
+      */
       char *hiprtc_options_string = hcstrdup (build_options_buf);
 
       const int num_options = 7 + hiprtc_make_options_array_from_string (hiprtc_options_string, hiprtc_options + 7);

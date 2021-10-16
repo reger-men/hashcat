@@ -15,7 +15,8 @@
 #define COMPARE_S "inc_comp_single_bs.cl"
 #define COMPARE_M "inc_comp_multi_bs.cl"
 
-#ifdef IS_NV
+//NV will not run this part
+#ifdef IS_NVX
 #define KXX_DECL
 #endif
 
@@ -896,7 +897,7 @@ DECLSPEC void s8 (const u32 a1, const u32 a2, const u32 a3, const u32 a4, const 
 #endif
 #endif
 
-#if (defined IS_AMD || defined IS_HIP) || defined IS_GENERIC
+#if (defined IS_AMD || defined IS_HIP) || defined IS_GENERIC || defined IS_NV
 
 /*
  * Bitslice DES S-boxes for x86 with MMX/SSE2/AVX and for typical RISC

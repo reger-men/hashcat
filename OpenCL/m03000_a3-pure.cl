@@ -28,7 +28,8 @@
 #define KXX_DECL
 #endif
 
-#ifdef IS_NV
+//NV will not run this part
+#ifdef IS_NVX
 
 #if CUDA_ARCH >= 500
 

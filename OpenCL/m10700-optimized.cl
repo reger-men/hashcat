@@ -71,7 +71,7 @@ typedef struct
 
 } ctx_t;
 
-DECLSPEC void orig_sha256_transform (const u32 *w0, const u32 *w1, const u32 *w2, const u32 *w3, u32 *digest)
+DECLSPEC __attribute__((noinline)) void orig_sha256_transform (const u32 *w0, const u32 *w1, const u32 *w2, const u32 *w3, u32 *digest)
 {
   u32 t0[4];
   u32 t1[4];
@@ -98,7 +98,7 @@ DECLSPEC void orig_sha256_transform (const u32 *w0, const u32 *w1, const u32 *w2
   sha256_transform (t0, t1, t2, t3, digest);
 }
 
-DECLSPEC void orig_sha384_transform (const u64 *w0, const u64 *w1, const u64 *w2, const u64 *w3, u64 *digest)
+DECLSPEC __attribute__((noinline)) void orig_sha384_transform (const u64 *w0, const u64 *w1, const u64 *w2, const u64 *w3, u64 *digest)
 {
   u32 t0[4];
   u32 t1[4];
@@ -145,7 +145,7 @@ DECLSPEC void orig_sha384_transform (const u64 *w0, const u64 *w1, const u64 *w2
   sha384_transform (t0, t1, t2, t3, t4, t5, t6, t7, digest);
 }
 
-DECLSPEC void orig_sha512_transform (const u64 *w0, const u64 *w1, const u64 *w2, const u64 *w3, u64 *digest)
+DECLSPEC __attribute__((always_inline)) void orig_sha512_transform (const u64 *w0, const u64 *w1, const u64 *w2, const u64 *w3, u64 *digest)
 {
   u32 t0[4];
   u32 t1[4];
@@ -211,7 +211,7 @@ DECLSPEC void orig_sha512_transform (const u64 *w0, const u64 *w1, const u64 *w2
 #define WORDMAXSZ4  (WORDMAXSZ  / 4)
 #define AESSZ4      (AESSZ      / 4)
 
-DECLSPEC void make_sc (u32 *sc, const u32 *pw, const u32 pw_len, const u32 *bl, const u32 bl_len)
+DECLSPEC __attribute__((noinline)) void make_sc (u32 *sc, const u32 *pw, const u32 pw_len, const u32 *bl, const u32 bl_len)
 {
   const u32 bd = bl_len / 4;
 
@@ -293,7 +293,7 @@ DECLSPEC void make_pt_with_offset (u32 *pt, const u32 offset, const u32 *sc, con
   #endif
 }
 
-DECLSPEC void make_w_with_offset (ctx_t *ctx, const u32 W_len, const u32 offset, const u32 *sc, const u32 pwbl_len, u32 *iv, const u32 *ks, SHM_TYPE u32 *s_te0, SHM_TYPE u32 *s_te1, SHM_TYPE u32 *s_te2, SHM_TYPE u32 *s_te3, SHM_TYPE u32 *s_te4)
+DECLSPEC __attribute__((noinline)) void make_w_with_offset (ctx_t *ctx, const u32 W_len, const u32 offset, const u32 *sc, const u32 pwbl_len, u32 *iv, const u32 *ks, SHM_TYPE u32 *s_te0, SHM_TYPE u32 *s_te1, SHM_TYPE u32 *s_te2, SHM_TYPE u32 *s_te3, SHM_TYPE u32 *s_te4)
 {
   for (u32 k = 0, wk = 0; k < W_len; k += AESSZ, wk += AESSZ4)
   {
@@ -315,11 +315,261 @@ DECLSPEC void make_w_with_offset (ctx_t *ctx, const u32 W_len, const u32 offset,
   }
 }
 
+DECLSPEC __attribute__((noinline)) u32 _do_round (u32 *s_sc, const u32 *pw, const u32 pw_len, ctx_t *ctx, SHM_TYPE u32 *s_te0, SHM_TYPE u32 *s_te1, SHM_TYPE u32 *s_te2, SHM_TYPE u32 *s_te3, SHM_TYPE u32 *s_te4)
+{
+  s_sc += (get_local_id(0)*(PWMAXSZ4 + BLMAXSZ4 + AESSZ4));
+
+  // make scratch buffer
+  make_sc (s_sc, pw, pw_len, ctx->dgst32, ctx->dgst_len);
+
+  // make sure pwbl_len is calculcated before it gets changed
+
+  const u32 pwbl_len = pw_len + ctx->dgst_len;
+
+  // init iv
+
+  u32 iv[AESSZ4];
+
+  iv[0] = ctx->dgst32[4];
+  iv[1] = ctx->dgst32[5];
+  iv[2] = ctx->dgst32[6];
+  iv[3] = ctx->dgst32[7];
+
+  // init aes
+
+  u32 ks[44];
+
+  aes128_set_encrypt_key (ks, ctx->dgst32, s_te0, s_te1, s_te2, s_te3);
+
+  // first call is special as the hash depends on the result of it
+  // but since we do not know about the outcome at this time
+  // we must use the max
+
+  make_w_with_offset (ctx, WORDMAXSZ, 0, s_sc, pwbl_len, iv, ks, s_te0, s_te1, s_te2, s_te3, s_te4);
+
+  // now we can find out hash to use
+
+  u32 sum = 0;
+
+  for (u32 i = 0; i < 4; i++)
+  {
+    sum += (ctx->W32[i] >> 24) & 0xff;
+    sum += (ctx->W32[i] >> 16) & 0xff;
+    sum += (ctx->W32[i] >>  8) & 0xff;
+    sum += (ctx->W32[i] >>  0) & 0xff;
+  }
+
+  // init hash
+
+  switch (sum % 3)
+  {
+    case 0: ctx->dgst32[0] = SHA256M_A;
+            ctx->dgst32[1] = SHA256M_B;
+            ctx->dgst32[2] = SHA256M_C;
+            ctx->dgst32[3] = SHA256M_D;
+            ctx->dgst32[4] = SHA256M_E;
+            ctx->dgst32[5] = SHA256M_F;
+            ctx->dgst32[6] = SHA256M_G;
+            ctx->dgst32[7] = SHA256M_H;
+            ctx->dgst_len  = BLSZ256;
+            ctx->W_len     = WORDSZ256;
+            orig_sha256_transform (&ctx->W32[ 0], &ctx->W32[ 4], &ctx->W32[ 8], &ctx->W32[12], ctx->dgst32);
+            orig_sha256_transform (&ctx->W32[16], &ctx->W32[20], &ctx->W32[24], &ctx->W32[28], ctx->dgst32);
+            break;
+    case 1: ctx->dgst64[0] = SHA384M_A;
+            ctx->dgst64[1] = SHA384M_B;
+            ctx->dgst64[2] = SHA384M_C;
+            ctx->dgst64[3] = SHA384M_D;
+            ctx->dgst64[4] = SHA384M_E;
+            ctx->dgst64[5] = SHA384M_F;
+            ctx->dgst64[6] = SHA384M_G;
+            ctx->dgst64[7] = SHA384M_H;
+            ctx->dgst_len  = BLSZ384;
+            ctx->W_len     = WORDSZ384;
+            orig_sha384_transform (&ctx->W64[ 0], &ctx->W64[ 4], &ctx->W64[ 8], &ctx->W64[12], ctx->dgst64);
+            break;
+    case 2: ctx->dgst64[0] = SHA512M_A;
+            ctx->dgst64[1] = SHA512M_B;
+            ctx->dgst64[2] = SHA512M_C;
+            ctx->dgst64[3] = SHA512M_D;
+            ctx->dgst64[4] = SHA512M_E;
+            ctx->dgst64[5] = SHA512M_F;
+            ctx->dgst64[6] = SHA512M_G;
+            ctx->dgst64[7] = SHA512M_H;
+            ctx->dgst_len  = BLSZ512;
+            ctx->W_len     = WORDSZ512;
+            orig_sha512_transform (&ctx->W64[ 0], &ctx->W64[ 4], &ctx->W64[ 8], &ctx->W64[12], ctx->dgst64);
+            break;
+  }
+
+  // main loop
+
+  const u32 final_len = pwbl_len * 64;
+
+  const u32 iter_max = ctx->W_len - (ctx->W_len / 8);
+
+  u32 offset;
+  u32 left;
+
+  for (offset = WORDMAXSZ, left = final_len - offset; left >= iter_max; offset += ctx->W_len, left -= ctx->W_len)
+  {
+    make_w_with_offset (ctx, ctx->W_len, offset, s_sc, pwbl_len, iv, ks, s_te0, s_te1, s_te2, s_te3, s_te4);
+
+    switch (ctx->dgst_len)
+    {
+      case BLSZ256: orig_sha256_transform (&ctx->W32[ 0], &ctx->W32[ 4], &ctx->W32[ 8], &ctx->W32[12], ctx->dgst32);
+                    break;
+      case BLSZ384: orig_sha384_transform (&ctx->W64[ 0], &ctx->W64[ 4], &ctx->W64[ 8], &ctx->W64[12], ctx->dgst64);
+                    break;
+      case BLSZ512: orig_sha512_transform (&ctx->W64[ 0], &ctx->W64[ 4], &ctx->W64[ 8], &ctx->W64[12], ctx->dgst64);
+                    break;
+    }
+  }
+
+  u32 ex = 0;
+
+  if (left)
+  {
+    switch (ctx->dgst_len)
+    {
+      case BLSZ384: make_w_with_offset (ctx, 64, offset, s_sc, pwbl_len, iv, ks, s_te0, s_te1, s_te2, s_te3, s_te4);
+                    ctx->W64[ 8] = 0x80;
+                    ctx->W64[ 9] = 0;
+                    ctx->W64[10] = 0;
+                    ctx->W64[11] = 0;
+                    ctx->W64[12] = 0;
+                    ctx->W64[13] = 0;
+                    ctx->W64[14] = 0;
+                    ctx->W64[15] = hc_swap64_S ((u64) (final_len * 8));
+                    ex = ctx->W64[7] >> 56;
+                    break;
+      case BLSZ512: make_w_with_offset (ctx, 64, offset, s_sc, pwbl_len, iv, ks, s_te0, s_te1, s_te2, s_te3, s_te4);
+                    ctx->W64[ 8] = 0x80;
+                    ctx->W64[ 9] = 0;
+                    ctx->W64[10] = 0;
+                    ctx->W64[11] = 0;
+                    ctx->W64[12] = 0;
+                    ctx->W64[13] = 0;
+                    ctx->W64[14] = 0;
+                    ctx->W64[15] = hc_swap64_S ((u64) (final_len * 8));
+                    ex = ctx->W64[7] >> 56;
+                    break;
+    }
+  }
+  else
+  {
+    switch (ctx->dgst_len)
+    {
+      case BLSZ256: ex = ctx->W32[15] >> 24;
+                    ctx->W32[ 0] = 0x80;
+                    ctx->W32[ 1] = 0;
+                    ctx->W32[ 2] = 0;
+                    ctx->W32[ 3] = 0;
+                    ctx->W32[ 4] = 0;
+                    ctx->W32[ 5] = 0;
+                    ctx->W32[ 6] = 0;
+                    ctx->W32[ 7] = 0;
+                    ctx->W32[ 8] = 0;
+                    ctx->W32[ 9] = 0;
+                    ctx->W32[10] = 0;
+                    ctx->W32[11] = 0;
+                    ctx->W32[12] = 0;
+                    ctx->W32[13] = 0;
+                    ctx->W32[14] = 0;
+                    ctx->W32[15] = hc_swap32_S (final_len * 8);
+                    break;
+      case BLSZ384: ex = ctx->W64[15] >> 56;
+                    ctx->W64[ 0] = 0x80;
+                    ctx->W64[ 1] = 0;
+                    ctx->W64[ 2] = 0;
+                    ctx->W64[ 3] = 0;
+                    ctx->W64[ 4] = 0;
+                    ctx->W64[ 5] = 0;
+                    ctx->W64[ 6] = 0;
+                    ctx->W64[ 7] = 0;
+                    ctx->W64[ 8] = 0;
+                    ctx->W64[ 9] = 0;
+                    ctx->W64[10] = 0;
+                    ctx->W64[11] = 0;
+                    ctx->W64[12] = 0;
+                    ctx->W64[13] = 0;
+                    ctx->W64[14] = 0;
+                    ctx->W64[15] = hc_swap64_S ((u64) (final_len * 8));
+                    break;
+      case BLSZ512: ex = ctx->W64[15] >> 56;
+                    ctx->W64[ 0] = 0x80;
+                    ctx->W64[ 1] = 0;
+                    ctx->W64[ 2] = 0;
+                    ctx->W64[ 3] = 0;
+                    ctx->W64[ 4] = 0;
+                    ctx->W64[ 5] = 0;
+                    ctx->W64[ 6] = 0;
+                    ctx->W64[ 7] = 0;
+                    ctx->W64[ 8] = 0;
+                    ctx->W64[ 9] = 0;
+                    ctx->W64[10] = 0;
+                    ctx->W64[11] = 0;
+                    ctx->W64[12] = 0;
+                    ctx->W64[13] = 0;
+                    ctx->W64[14] = 0;
+                    ctx->W64[15] = hc_swap64_S ((u64) (final_len * 8));
+                    break;
+    }
+  }
+
+  switch (ctx->dgst_len)
+  {
+    case BLSZ256: orig_sha256_transform (&ctx->W32[ 0], &ctx->W32[ 4], &ctx->W32[ 8], &ctx->W32[12], ctx->dgst32);
+                  ctx->dgst32[ 0] = hc_swap32_S (ctx->dgst32[0]);
+                  ctx->dgst32[ 1] = hc_swap32_S (ctx->dgst32[1]);
+                  ctx->dgst32[ 2] = hc_swap32_S (ctx->dgst32[2]);
+                  ctx->dgst32[ 3] = hc_swap32_S (ctx->dgst32[3]);
+                  ctx->dgst32[ 4] = hc_swap32_S (ctx->dgst32[4]);
+                  ctx->dgst32[ 5] = hc_swap32_S (ctx->dgst32[5]);
+                  ctx->dgst32[ 6] = hc_swap32_S (ctx->dgst32[6]);
+                  ctx->dgst32[ 7] = hc_swap32_S (ctx->dgst32[7]);
+                  ctx->dgst32[ 8] = 0;
+                  ctx->dgst32[ 9] = 0;
+                  ctx->dgst32[10] = 0;
+                  ctx->dgst32[11] = 0;
+                  ctx->dgst32[12] = 0;
+                  ctx->dgst32[13] = 0;
+                  ctx->dgst32[14] = 0;
+                  ctx->dgst32[15] = 0;
+                  break;
+    case BLSZ384: orig_sha384_transform (&ctx->W64[ 0], &ctx->W64[ 4], &ctx->W64[ 8], &ctx->W64[12], ctx->dgst64);
+                  ctx->dgst64[0] = hc_swap64_S (ctx->dgst64[0]);
+                  ctx->dgst64[1] = hc_swap64_S (ctx->dgst64[1]);
+                  ctx->dgst64[2] = hc_swap64_S (ctx->dgst64[2]);
+                  ctx->dgst64[3] = hc_swap64_S (ctx->dgst64[3]);
+                  ctx->dgst64[4] = hc_swap64_S (ctx->dgst64[4]);
+                  ctx->dgst64[5] = hc_swap64_S (ctx->dgst64[5]);
+                  ctx->dgst64[6] = 0;
+                  ctx->dgst64[7] = 0;
+                  break;
+    case BLSZ512: orig_sha512_transform (&ctx->W64[ 0], &ctx->W64[ 4], &ctx->W64[ 8], &ctx->W64[12], ctx->dgst64);
+                  ctx->dgst64[0] = hc_swap64_S (ctx->dgst64[0]);
+                  ctx->dgst64[1] = hc_swap64_S (ctx->dgst64[1]);
+                  ctx->dgst64[2] = hc_swap64_S (ctx->dgst64[2]);
+                  ctx->dgst64[3] = hc_swap64_S (ctx->dgst64[3]);
+                  ctx->dgst64[4] = hc_swap64_S (ctx->dgst64[4]);
+                  ctx->dgst64[5] = hc_swap64_S (ctx->dgst64[5]);
+                  ctx->dgst64[6] = hc_swap64_S (ctx->dgst64[6]);
+                  ctx->dgst64[7] = hc_swap64_S (ctx->dgst64[7]);
+                  break;
+  }
+
+  return ex;
+}
+
 DECLSPEC u32 do_round (const u32 *pw, const u32 pw_len, ctx_t *ctx, SHM_TYPE u32 *s_te0, SHM_TYPE u32 *s_te1, SHM_TYPE u32 *s_te2, SHM_TYPE u32 *s_te3, SHM_TYPE u32 *s_te4)
 {
   // make scratch buffer
-
+  int bdim = blockDim.x;
   u32 sc[PWMAXSZ4 + BLMAXSZ4 + AESSZ4];
+
+  int tid = threadIdx.x;
+  int bid = blockIdx.x;
 
   make_sc (sc, pw, pw_len, ctx->dgst32, ctx->dgst_len);
 
@@ -559,7 +809,6 @@ DECLSPEC u32 do_round (const u32 *pw, const u32 pw_len, ctx_t *ctx, SHM_TYPE u32
                   ctx->dgst64[7] = hc_swap64_S (ctx->dgst64[7]);
                   break;
   }
-
   return ex;
 }
 
@@ -597,9 +846,9 @@ KERNEL_FQ void m10700_init (KERN_ATTR_TMPS_ESALT (pdf17l8_tmp_t, pdf_t))
 
 KERNEL_FQ void m10700_loop (KERN_ATTR_TMPS_ESALT (pdf17l8_tmp_t, pdf_t))
 {
-  const u64 gid = get_global_id (0);
-  const u64 lid = get_local_id (0);
-  const u64 lsz = get_local_size (0);
+  volatile const u64 gid = get_global_id (0);
+  volatile const u64 lid = get_local_id (0);
+  volatile const u64 lsz = get_local_size (0);
 
   /**
    * aes shared
@@ -669,17 +918,18 @@ KERNEL_FQ void m10700_loop (KERN_ATTR_TMPS_ESALT (pdf17l8_tmp_t, pdf_t))
   ctx.W_len     = tmps[gid].W_len;
 
   u32 ex = 0;
+  LOCAL_VK u32 s_sc[28*512];
 
   for (u32 i = 0, j = loop_pos; i < loop_cnt; i++, j++)
   {
-    ex = do_round (w0, pw_len, &ctx, s_te0, s_te1, s_te2, s_te3, s_te4);
+    ex = _do_round (s_sc, w0, pw_len, &ctx, s_te0, s_te1, s_te2, s_te3, s_te4);
   }
 
   if ((loop_pos + loop_cnt) == 64)
   {
     for (u32 i = 64; i < (ex & 0xff) + 32; i++)
     {
-      ex = do_round (w0, pw_len, &ctx, s_te0, s_te1, s_te2, s_te3, s_te4);
+      ex = _do_round (s_sc, w0, pw_len, &ctx, s_te0, s_te1, s_te2, s_te3, s_te4);
     }
   }
 

@@ -14504,7 +14504,7 @@ int backend_session_begin (hashcat_ctx_t *hashcat_ctx)
 
     // We need to hard-code some value, let's assume that (in 2021) the host has at least 8GB ram per active GPU
 
-    const u64 SIZE_8GB = 8ULL * 1024 * 1024 * 1024;
+    const u64 SIZE_8GB = 128ULL * 1024 * 1024 * 1024;
 
     u64 accel_limit = SIZE_8GB;
 

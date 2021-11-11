@@ -94,6 +94,12 @@ char *module_jit_build_options (MAYBE_UNUSED const hashconfig_t *hashconfig, MAY
     use_dynamic = true;
   }
 
+  // HIP Optimization
+  else if(device_param->is_hip == true)
+  {
+    use_dynamic = true;
+  }
+
   // this uses some nice feedback effect.
   // based on the device_local_mem_size the reqd_work_group_size in the kernel is set to some value
   // which is then is read from the opencl host in the kernel_preferred_wgs_multiple1/2/3 result.

@@ -321,6 +321,7 @@ typedef hipError_t (HIP_API_CALL *HIP_HIPEVENTELAPSEDTIME)       (float *, hipEv
 typedef hipError_t (HIP_API_CALL *HIP_HIPEVENTRECORD)            (hipEvent_t, hipStream_t);
 typedef hipError_t (HIP_API_CALL *HIP_HIPEVENTSYNCHRONIZE)       (hipEvent_t);
 typedef hipError_t (HIP_API_CALL *HIP_HIPFUNCGETATTRIBUTE)       (int *, hipFunction_attribute, hipFunction_t);
+typedef hipError_t (HIP_API_CALL *HIP_HIPFUNCSETATTRIBUTE)       (hipFunction_t, hipFunction_attribute, int);
 typedef hipError_t (HIP_API_CALL *HIP_HIPGETERRORNAME)           (hipError_t, const char **);
 typedef hipError_t (HIP_API_CALL *HIP_HIPGETERRORSTRING)         (hipError_t, const char **);
 typedef hipError_t (HIP_API_CALL *HIP_HIPINIT)                   (unsigned int);
@@ -364,6 +365,7 @@ typedef struct hc_hip_lib
   HIP_HIPEVENTRECORD            hipEventRecord;
   HIP_HIPEVENTSYNCHRONIZE       hipEventSynchronize;
   HIP_HIPFUNCGETATTRIBUTE       hipFuncGetAttribute;
+  HIP_HIPFUNCSETATTRIBUTE       hipFuncSetAttribute;
   HIP_HIPGETERRORNAME           hipGetErrorName;
   HIP_HIPGETERRORSTRING         hipGetErrorString;
   HIP_HIPINIT                   hipInit;

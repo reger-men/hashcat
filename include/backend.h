@@ -114,7 +114,10 @@ int hc_hipEventElapsedTime       (hashcat_ctx_t *hashcat_ctx, float *pMillisecon
 int hc_hipEventQuery             (hashcat_ctx_t *hashcat_ctx, hipEvent_t hEvent);
 int hc_hipEventRecord            (hashcat_ctx_t *hashcat_ctx, hipEvent_t hEvent, hipStream_t hStream);
 int hc_hipEventSynchronize       (hashcat_ctx_t *hashcat_ctx, hipEvent_t hEvent);
+
 int hc_hipFuncGetAttribute       (hashcat_ctx_t *hashcat_ctx, int *pi, hipFunction_attribute attrib, hipFunction_t hfunc);
+int hc_hipFuncSetAttribute       (hashcat_ctx_t *hashcat_ctx, hipFunction_t hfunc, hipFunction_attribute attrib, int value);
+
 int hc_hipInit                   (hashcat_ctx_t *hashcat_ctx, unsigned int Flags);
 int hc_hipLaunchKernel           (hashcat_ctx_t *hashcat_ctx, hipFunction_t f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, hipStream_t hStream, void **kernelParams, void **extra);
 int hc_hipMemAlloc               (hashcat_ctx_t *hashcat_ctx, hipDeviceptr_t *dptr, size_t bytesize);

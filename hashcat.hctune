@@ -280,6 +280,8 @@ GeForce_RTX_3090                                ALIAS_nv_sm50_or_higher
 ##
 
 Device_738c                                     ALIAS_AMD_MI100
+gfx908                                          ALIAS_AMD_MI100
+gfx908:sramecc+:xnack-                          ALIAS_AMD_MI100
 
 AMD_Radeon_(TM)_RX_480_Graphics                 ALIAS_AMD_RX480
 
@@ -379,6 +381,9 @@ GeForce_GTX_TITAN                               3       2400    4       A       
 GeForce_GTX_TITAN                               3       2410    2       A       A
 GeForce_GTX_TITAN                               3       5500    1       A       A
 GeForce_GTX_TITAN                               3       9900    2       A       A
+
+## Manual tuning for MI100 HIP
+ALIAS_AMD_MI100                                 *       10700   1       512     1
 
 ##
 ## BCRYPT

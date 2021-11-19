@@ -8026,6 +8026,11 @@ int backend_ctx_devices_init (hashcat_ctx_t *hashcat_ctx, const int comptime)
 
       device_param->device_processors = device_processors;
 
+      //FIXME: temp WA for HIP
+      if((device_processors == 120) && (device_name != NULL) && (device_name[0] == '\0')){
+        strcpy(device_param->device_name, "Device_738c"); //MI100
+      }	
+
       // device_global_mem, device_maxmem_alloc, device_available_mem
 
       size_t bytes = 0;

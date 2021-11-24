@@ -211,7 +211,7 @@ DECLSPEC __attribute__((always_inline)) void orig_sha512_transform (const u64 *w
 #define WORDMAXSZ4  (WORDMAXSZ  / 4)
 #define AESSZ4      (AESSZ      / 4)
 
-DECLSPEC __attribute__((noinline)) void make_sc (u32 *sc, const u32 *pw, const u32 pw_len, const u32 *bl, const u32 bl_len)
+DECLSPEC __attribute__((noinline)) void make_sc (LOCAL_AS u32 *sc, const u32 *pw, const u32 pw_len, const u32 *bl, const u32 bl_len)
 {
   const u32 bd = bl_len / 4;
 
@@ -263,7 +263,7 @@ DECLSPEC __attribute__((noinline)) void make_sc (u32 *sc, const u32 *pw, const u
   }
 }
 
-DECLSPEC void make_pt_with_offset (u32 *pt, const u32 offset, const u32 *sc, const u32 pwbl_len)
+DECLSPEC void make_pt_with_offset (u32 *pt, const u32 offset, LOCAL_AS const u32 *sc, const u32 pwbl_len)
 {
   const u32 m = offset % pwbl_len;
 
@@ -293,7 +293,7 @@ DECLSPEC void make_pt_with_offset (u32 *pt, const u32 offset, const u32 *sc, con
   #endif
 }
 
-DECLSPEC __attribute__((noinline)) void make_w_with_offset (ctx_t *ctx, const u32 W_len, const u32 offset, const u32 *sc, const u32 pwbl_len, u32 *iv, const u32 *ks, SHM_TYPE u32 *s_te0, SHM_TYPE u32 *s_te1, SHM_TYPE u32 *s_te2, SHM_TYPE u32 *s_te3, SHM_TYPE u32 *s_te4)
+DECLSPEC __attribute__((noinline)) void make_w_with_offset (ctx_t *ctx, const u32 W_len, const u32 offset, LOCAL_AS const u32 *sc, const u32 pwbl_len, u32 *iv, const u32 *ks, SHM_TYPE u32 *s_te0, SHM_TYPE u32 *s_te1, SHM_TYPE u32 *s_te2, SHM_TYPE u32 *s_te3, SHM_TYPE u32 *s_te4)
 {
   for (u32 k = 0, wk = 0; k < W_len; k += AESSZ, wk += AESSZ4)
   {

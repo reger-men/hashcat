@@ -315,7 +315,7 @@ DECLSPEC __attribute__((noinline)) void make_w_with_offset (ctx_t *ctx, const u3
   }
 }
 
-DECLSPEC __attribute__((noinline)) u32 do_round (u32 *s_sc, const u32 *pw, const u32 pw_len, ctx_t *ctx, SHM_TYPE u32 *s_te0, SHM_TYPE u32 *s_te1, SHM_TYPE u32 *s_te2, SHM_TYPE u32 *s_te3, SHM_TYPE u32 *s_te4)
+DECLSPEC __attribute__((noinline)) u32 do_round (LOCAL_AS u32 *s_sc, const u32 *pw, const u32 pw_len, ctx_t *ctx, SHM_TYPE u32 *s_te0, SHM_TYPE u32 *s_te1, SHM_TYPE u32 *s_te2, SHM_TYPE u32 *s_te3, SHM_TYPE u32 *s_te4)
 {
   // make scratch buffer
   make_sc (s_sc, pw, pw_len, ctx->dgst32, ctx->dgst_len);
